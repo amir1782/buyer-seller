@@ -1,9 +1,11 @@
 // ==UserScript==
 // @name         Buyer/Seller
 // @namespace    http://tampermonkey.net/
-// @version      0.35
+// @version      0.36
 // @description  try to take over the world!
 // @author       Amir K.
+// @updateURL    https://raw.githubusercontent.com/amir1782/buyer-seller/master/buyer-seller.js
+// @downloadRUL  https://raw.githubusercontent.com/amir1782/buyer-seller/master/buyer-seller.js
 // @match        https://onlineplus.mofidonline.com
 // @match        https://onlineplus.mofidonline.com/Home/Default/page-1
 // @match        https://onlineplus.mofidonline.com/Home/Default
