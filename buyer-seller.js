@@ -1,13 +1,17 @@
 // ==UserScript==
 // @name         Buyer/Seller
 // @namespace    http://tampermonkey.net/
-// @version      0.30
+// @version      0.35
 // @description  try to take over the world!
 // @author       Amir K.
 // @match        https://onlineplus.mofidonline.com
 // @match        https://onlineplus.mofidonline.com/Home/Default/page-1
 // @match        https://onlineplus.mofidonline.com/Home/Default
 // @match        https://onlineplus.mofidonline.com/Home/Default2
+// @match        https://silver.nashbro.com
+// @match        https://silver.nashbro.com/Home/Default/page-1
+// @match        https://silver.nashbro.com/Home/Default
+// @match        https://silver.nashbro.com/Home/Default2
 // @grant        none
 // ==/UserScript==
 
@@ -28,6 +32,16 @@
     let timeStr1 = '';
     let timeStr2 = '';
     let maxRandomSeconds = 0;
+
+    const PRESET1_INITIAL_TIME = '8:29:55';
+    const PRESET1_ORDER_NUMBER = '15';
+    const PRESET1_TIME_INTERVAL = '500';
+    const PRESET1_TIME_TOLERANCE = '20';
+
+    const PRESET2_INITIAL_TIME = '12:29:55';
+    const PRESET2_ORDER_NUMBER = '15';
+    const PRESET2_TIME_INTERVAL = '500';
+    const PRESET2_TIME_TOLERANCE = '20';
 
 
 
@@ -101,7 +115,6 @@
                 }
             });
         });
-        // let config = {characterData: true, subtree: true};
         let config = { attributes: true, childList: true, characterData: true };
         observer.observe(observableDiv, config);
     }
@@ -118,16 +131,12 @@
     shareNumInput.type = 'text';
     shareNumInput.name = 'numShareText';
     shareNumInput.disabled = true;
-    //setInputFilter(shareNumInput, function(value) { return /^\d*$/.test(value); });
     shareNumInput.min = '1';
-    //numShareInput.pattern = '[0-9]{10}';
-    //numShareInput.onkeyup = 'this.value=this.value.replace(/[^0-9]/g,"");';
     let observableNum = document.querySelector('#send_order_txtCount');
     if (observableNum != null) {
         observableNum.addEventListener('keyup', function() { shareNumInput.value = observableNum.value; });
         observableNum.addEventListener('change', function() { shareNumInput.value = observableNum.value; });
     }
-    //shareNumInput.value = '0';
     formContainer.appendChild(shareNumInput);
 
 
@@ -141,17 +150,12 @@
     sharePriceInput.type = 'text';
     sharePriceInput.name = 'priceShareText';
     sharePriceInput.disabled = true;
-    // sharePriceInput.classList.add('number', 'send_order_txtCount');
     sharePriceInput.min = '1';
-    //numShareInput.pattern = '[0-9]{10}';
-    //numShareInput.onkeyup = 'this.value=this.value.replace(/[^0-9]/g,"");';
-    //sharePriceInput.onkeydown = '';
     let observablePrice = document.querySelector('#send_order_txtPrice');
     if (observablePrice != null) {
         observablePrice.addEventListener('keyup', function() {sharePriceInput.value = observablePrice.value;});
         observablePrice.addEventListener('change', function() {sharePriceInput.value = observablePrice.value;});
     }
-    //sharePriceInput.value = '0';
     formContainer.appendChild(sharePriceInput);
 
 
@@ -163,7 +167,7 @@
     let timeInput = document.createElement('input');
     timeInput.type = 'text';
     timeInput.name = 'timeText';
-    timeInput.value = '8:29:55';
+    timeInput.value = PRESET1_INITIAL_TIME;
     formContainer.appendChild(timeInput);
 
 
@@ -175,7 +179,7 @@
     let numInput = document.createElement('input');
     numInput.type = 'number';
     numInput.name = 'numText';
-    numInput.value = '10';
+    numInput.value = PRESET1_ORDER_NUMBER;
     formContainer.appendChild(numInput);
 
 
@@ -187,7 +191,7 @@
     let difInput = document.createElement('input');
     difInput.type = 'number';
     difInput.name = 'difText';
-    difInput.value = '500';
+    difInput.value = PRESET1_TIME_INTERVAL;
     formContainer.appendChild(difInput);
 
 
@@ -199,7 +203,7 @@
     let tolInput = document.createElement('input');
     tolInput.type = 'number';
     tolInput.name = 'difText';
-    tolInput.value = '20';
+    tolInput.value = PRESET1_TIME_TOLERANCE;
     formContainer.appendChild(tolInput);
 
 
@@ -212,6 +216,43 @@
     divContainer.appendChild(submitBtn);
 
 
+    // Presets Radio Buttons
+    let presetsFieldset = document.createElement('fieldset');
+
+    let presetsFieldsetLegend = document.createElement('legend');
+    presetsFieldsetLegend.innerText = 'پیش فرض';
+    presetsFieldset.appendChild(presetsFieldsetLegend);
+
+    let preset1 = document.createElement('input');
+    preset1.type = 'radio';
+    preset1.id = 'preset1';
+    preset1.name = 'presets';
+    preset1.value = '1';
+    preset1.onclick = presetSelected;
+    presetsFieldset.appendChild(preset1);
+
+    let presetLabel1 = document.createElement('label');
+    presetLabel1.setAttribute('for', 'preset1');
+    presetLabel1.innerText = 'پیش فرض 8:30';
+    presetsFieldset.appendChild(presetLabel1);
+
+    let lineBreak = document.createElement('br');
+    presetsFieldset.appendChild(lineBreak);
+
+    let preset2 = document.createElement('input');
+    preset2.type = 'radio';
+    preset2.id = 'preset2';
+    preset2.name = 'presets';
+    preset2.value = '2';
+    preset2.onclick = presetSelected;
+    presetsFieldset.appendChild(preset2);
+
+    let presetLabel2 = document.createElement('label');
+    presetLabel2.setAttribute('for', 'preset2');
+    presetLabel2.innerText = 'پیش فرض 12:30';
+    presetsFieldset.appendChild(presetLabel2);
+
+    divContainer.appendChild(presetsFieldset);
 
     // Add Styles
 
@@ -277,6 +318,18 @@
         '' +
         '.divContainer button.red:hover {' +
         '    background-image: linear-gradient(var(--tp-3d-bu-re-h));' +
+        '}' +
+        '' +
+        '.divContainer fieldset {' +
+        '    margin: 16px 0;' +
+        '}' +
+        '' +
+        '.divContainer fieldset * {' +
+        '    vertical-align: middle;' +
+        '}' +
+        '' +
+        '.divContainer input[type=radio] {' +
+        '    margin: 8px 4px;' +
         '}';
     newStyles.innerText = stylesText;
     document.head.appendChild(newStyles);
@@ -347,6 +400,22 @@
     function sellNavPressed() {
         let mainBuyDiv = document.getElementsByClassName('orderside86')[0];
         mainBuyDiv.click();
+    }
+
+
+    // Preset Selected
+    function presetSelected() {
+        if (preset1.checked) {
+            timeInput.value = PRESET1_INITIAL_TIME;
+            numInput.value = PRESET1_ORDER_NUMBER;
+            difInput.value = PRESET1_TIME_INTERVAL;
+            tolInput.value = PRESET1_TIME_TOLERANCE;
+        } else if (preset2.checked) {
+            timeInput.value = PRESET2_INITIAL_TIME;
+            numInput.value = PRESET2_ORDER_NUMBER;
+            difInput.value = PRESET2_TIME_INTERVAL;
+            tolInput.value = PRESET2_TIME_TOLERANCE;
+        }
     }
 
 
