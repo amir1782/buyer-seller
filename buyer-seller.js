@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         Mofid Buyer/Seller
+// @name         Buyer/Seller
 // @namespace    http://tampermonkey.net/
-// @version      0.25
+// @version      0.30
 // @description  try to take over the world!
 // @author       Amir K.
 // @match        https://onlineplus.mofidonline.com
@@ -58,7 +58,7 @@
     buyNavbar.style.backgroundColor = '#d4edda';
     buyNavbar.style.color = '#155724';
     buyNavbar.innerText = 'خرید';
-    buyNavbar.onclick = toggleTabs;
+    buyNavbar.onclick = buyNavPressed;
     buyNavbar.disabled = false;
     mySidebar.appendChild(buyNavbar);
 
@@ -67,7 +67,7 @@
     sellNavbar.style.color = '#721c24';
     sellNavbar.innerText = 'فروش';
     sellNavbar.style.cursor = 'pointer';
-    sellNavbar.onclick = toggleTabs;
+    sellNavbar.onclick = sellNavPressed;
     mySidebar.appendChild(sellNavbar);
 
 
@@ -293,38 +293,60 @@
         if (observablePrice != null) { sharePriceInput.value = observablePrice.value; }
     }
 
-    // Enable/Disable Input Items
+
+    // Disable Input Items
     function disableItems() {
         timeInput.disabled = true;
         numInput.disabled = true;
         difInput.disabled = true;
+        tolInput.disabled = true;
     }
 
+
+    // Enable Input Items
     function enableItems() {
         timeInput.disabled = false;
         numInput.disabled = false;
         difInput.disabled = false;
+        tolInput.disabled = false;
     }
 
 
-    // Toggle Buy/Sell Tabs
-    function toggleTabs() {
-        if (buyTabActivated) {
-            mySidebar.classList.replace('buy', 'sell');
-            buyNavbar.disabled = false;
-            buyNavbar.style.cursor = 'pointer';
-            sellNavbar.disabled = true;
-            sellNavbar.style.cursor = 'auto';
-            submitBtn.classList.replace('green', 'red');
-        } else {
-            mySidebar.classList.replace('sell', 'buy');
-            buyNavbar.disabled = true;
-            buyNavbar.style.cursor = 'auto';
-            sellNavbar.disabled = false;
-            sellNavbar.style.cursor = 'pointer';
-            submitBtn.classList.replace('red', 'green');
-        }
-        buyTabActivated = !(buyTabActivated);
+    // Activate Buy Nav
+    function activateBuyNav() {
+        mySidebar.classList.replace('sell', 'buy');
+        buyNavbar.disabled = true;
+        buyNavbar.style.cursor = 'auto';
+        sellNavbar.disabled = false;
+        sellNavbar.style.cursor = 'pointer';
+        submitBtn.classList.replace('red', 'green');
+        buyTabActivated = true;
+    }
+
+
+    // Activate Sell Nav
+    function activateSellNav() {
+        mySidebar.classList.replace('buy', 'sell');
+        buyNavbar.disabled = false;
+        buyNavbar.style.cursor = 'pointer';
+        sellNavbar.disabled = true;
+        sellNavbar.style.cursor = 'auto';
+        submitBtn.classList.replace('green', 'red');
+        buyTabActivated = false;
+    }
+
+
+    // Buy Nav Button Pressed
+    function buyNavPressed() {
+        let mainBuyDiv = document.getElementsByClassName('orderside65')[0];
+        mainBuyDiv.click();
+    }
+
+
+    // Sell Nav Button Pressed
+    function sellNavPressed() {
+        let mainBuyDiv = document.getElementsByClassName('orderside86')[0];
+        mainBuyDiv.click();
     }
 
 
@@ -475,18 +497,41 @@
 
 
     // Onload Function Goes Here
+
+    const observerConfig = { attributes: true };
+
+    // Add Observer for Activation of Buy Div
     let buyDiv = document.getElementsByClassName('orderside65')[0];
-    buyDiv.addEventListener('click', function() {
-        if (!buyTabActivated) {
-            buyNavbar.click();
+    const buyDivObserver = new MutationObserver(function(mutationsList, observer) {
+        for (let mutation of mutationsList) {
+            if (mutation.type === 'attributes') {
+                if (buyDiv.classList.contains('active')) {
+                    console.log('Buy div is activated');
+                    if (!buyTabActivated) {
+                        activateBuyNav();
+                    }
+                }
+            }
         }
     });
+    buyDivObserver.observe(buyDiv, observerConfig);
+
+    // Add Observer for Activation of Sell Div
     let sellDiv = document.getElementsByClassName('orderside86')[0];
-    sellDiv.addEventListener('click', function() {
-        if (buyTabActivated) {
-            sellNavbar.click();
+    const sellDivObserver = new MutationObserver(function(mutationsList, observer) {
+        for (let mutation of mutationsList) {
+            if (mutation.type === 'attributes') {
+                if (sellDiv.classList.contains('active')) {
+                    console.log('Sell div is activated');
+                    if (buyTabActivated) {
+                        activateSellNav();
+                    }
+                }
+            }
         }
     });
+    sellDivObserver.observe(sellDiv, observerConfig);
+
 
 
 })();
