@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Buyer/Seller
 // @namespace    http://tampermonkey.net/
-// @version      0.36
+// @version      0.37
 // @description  try to take over the world!
 // @author       Amir K.
 // @updateURL    https://raw.githubusercontent.com/amir1782/buyer-seller/master/buyer-seller.js
@@ -38,12 +38,12 @@
     const PRESET1_INITIAL_TIME = '8:29:55';
     const PRESET1_ORDER_NUMBER = '15';
     const PRESET1_TIME_INTERVAL = '500';
-    const PRESET1_TIME_TOLERANCE = '20';
+    const PRESET1_TIME_TOLERANCE = '10';
 
-    const PRESET2_INITIAL_TIME = '12:29:55';
-    const PRESET2_ORDER_NUMBER = '15';
+    const PRESET2_INITIAL_TIME = '12:34:55';
+    const PRESET2_ORDER_NUMBER = '18';
     const PRESET2_TIME_INTERVAL = '500';
-    const PRESET2_TIME_TOLERANCE = '20';
+    const PRESET2_TIME_TOLERANCE = '10';
 
 
 
