@@ -1,11 +1,11 @@
 // ==UserScript==
 // @name         Buyer/Seller
 // @namespace    http://tampermonkey.net/
-// @version      0.37
+// @version      0.38
 // @description  try to take over the world!
 // @author       Amir K.
-// @updateURL    https://raw.githubusercontent.com/amir1782/buyer-seller/master/buyer-seller.js
-// @downloadRUL  https://raw.githubusercontent.com/amir1782/buyer-seller/master/buyer-seller.js
+// @updateURL    https://raw.githubusercontent.com/amir1782/buyer-seller/master/buyer-seller.meta.js
+// @downloadURL  https://raw.githubusercontent.com/amir1782/buyer-seller/master/buyer-seller.js
 // @match        https://onlineplus.mofidonline.com
 // @match        https://onlineplus.mofidonline.com/Home/Default/page-1
 // @match        https://onlineplus.mofidonline.com/Home/Default
@@ -256,6 +256,19 @@
 
     divContainer.appendChild(presetsFieldset);
 
+
+    // Add Manual Control Checkbox
+    let manualCheckbox = document.createElement('input');
+    manualCheckbox.type = 'checkbox';
+    manualCheckbox.id = 'manualCheckbox';
+    divContainer.appendChild(manualCheckbox);
+
+    let manualLabel = document.createElement('label');
+    manualLabel.setAttribute('for', 'manualCheckbox');
+    manualLabel.innerText = 'کنترل دستی';
+    divContainer.appendChild(manualLabel);
+
+
     // Add Styles
 
     let newStyles = document.createElement('style');
@@ -293,6 +306,10 @@
         '    font-size: 9px;' +
         '}' +
         '' +
+        '.divContainer * {' +
+        '    vertical-align: middle;' +
+        '}' +
+        '' +
         '.divContainer form input[type=text], .divContainer form input[type=number] {' +
         '    width: 100%;' +
         '    margin: 8px 0 16px;' +
@@ -326,12 +343,11 @@
         '    margin: 16px 0;' +
         '}' +
         '' +
-        '.divContainer fieldset * {' +
-        '    vertical-align: middle;' +
-        '}' +
-        '' +
         '.divContainer input[type=radio] {' +
         '    margin: 8px 4px;' +
+        '}' +
+        '.divContainer input[type=checkbox] {' +
+        '    margin: 0 4px;' +
         '}';
     newStyles.innerText = stylesText;
     document.head.appendChild(newStyles);
@@ -510,7 +526,7 @@
                 type: 'error'
             });
             return false;
-        } else if (parseInt(difInput.value) < 300) {
+        } else if (!manualCheckbox.checked && parseInt(difInput.value) < 300) {
             Notify({
                 text: 'حداقل فاصله زمانی می‌بایست 300ms باشد',
                 type: 'error'
