@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         Buyer/Seller
+// @name         Buyer/Seller Test
 // @namespace    http://tampermonkey.net/
-// @version      0.38
+// @version      0.40
 // @description  try to take over the world!
 // @author       Amir K.
 // @updateURL    https://raw.githubusercontent.com/amir1782/buyer-seller/master/buyer-seller.meta.js
@@ -14,5 +14,6 @@
 // @match        https://silver.nashbro.com/Home/Default/page-1
 // @match        https://silver.nashbro.com/Home/Default
 // @match        https://silver.nashbro.com/Home/Default2
-// @grant        none
+// @grant        GM_getValue
+// @grant        GM_setValue
 // ==/UserScript==

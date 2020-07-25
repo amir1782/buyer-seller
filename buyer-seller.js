@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         Buyer/Seller
+// @name         Buyer/Seller Test
 // @namespace    http://tampermonkey.net/
-// @version      0.38
+// @version      0.40
 // @description  try to take over the world!
 // @author       Amir K.
 // @updateURL    https://raw.githubusercontent.com/amir1782/buyer-seller/master/buyer-seller.meta.js
@@ -14,15 +14,18 @@
 // @match        https://silver.nashbro.com/Home/Default/page-1
 // @match        https://silver.nashbro.com/Home/Default
 // @match        https://silver.nashbro.com/Home/Default2
-// @grant        none
+// @grant        GM_getValue
+// @grant        GM_setValue
 // ==/UserScript==
 
 (function() {
     'use strict';
 
+    const scriptVersion = '0.40';
 
 
-    // Define Global Variables
+
+    // Initialize Global Variables
 
     let buyTabActivated = true;
     let sendingTimer;
@@ -35,15 +38,110 @@
     let timeStr2 = '';
     let maxRandomSeconds = 0;
 
-    const PRESET1_INITIAL_TIME = '8:29:55';
-    const PRESET1_ORDER_NUMBER = '15';
-    const PRESET1_TIME_INTERVAL = '500';
-    const PRESET1_TIME_TOLERANCE = '10';
+    let sendingMethod = GM_getValue('sendingMethod', 0);
+    let is24hours = GM_getValue('hours24', false);
+    let isManualCheck = GM_getValue('manualCheck', true);
+    let isTolerance =GM_getValue('tolerance', 50);
 
-    const PRESET2_INITIAL_TIME = '12:34:55';
-    const PRESET2_ORDER_NUMBER = '18';
-    const PRESET2_TIME_INTERVAL = '500';
-    const PRESET2_TIME_TOLERANCE = '10';
+    const PRESET1_INITIAL_TIME = GM_getValue('PR1_INIT', '8:29:55');
+    const PRESET1_ORDER_NUMBER = GM_getValue('PR1_NUM', '15');
+    const PRESET1_TIME_INTERVAL = GM_getValue('PR1_INT', '500');
+    const PRESET1_TIME_TOLERANCE = GM_getValue('PR1_TOL', '10');
+
+    const PRESET2_INITIAL_TIME = GM_getValue('PR2_INIT', '12:34:55');
+    const PRESET2_ORDER_NUMBER = GM_getValue('PR2_NUM', '15');
+    const PRESET2_TIME_INTERVAL = GM_getValue('PR2_INT', '500');
+    const PRESET2_TIME_TOLERANCE = GM_getValue('PR2_TOL', '10');
+
+
+
+    // Create Settings Modal Layout
+
+    let modalContainer = document.createElement('div');
+    modalContainer.classList.add('set-modal');
+    document.body.appendChild(modalContainer);
+
+
+
+    // Add Items to Settings Modal
+
+    let modalContent = document.createElement('div');
+    modalContent.classList.add('set-modal-content');
+    modalContainer.appendChild(modalContent);
+
+
+    // Modal Header
+    let modalHeaderDiv = document.createElement('div');
+    modalHeaderDiv.classList.add('set-modal-header');
+    modalHeaderDiv.innerHTML += '<h4 class="set-modal-title">تنظیمات</h4>';
+    modalContent.appendChild(modalHeaderDiv);
+
+    let closeSettingsSpan = document.createElement('span');
+    closeSettingsSpan.classList.add('set-modal-close');
+    closeSettingsSpan.style.cursor = 'pointer';
+    closeSettingsSpan.innerHTML = '&times;';
+    closeSettingsSpan.onclick = closeSettingsPressed;
+    modalHeaderDiv.appendChild(closeSettingsSpan);
+
+
+    // Modal Body
+    let modalBodyDiv = document.createElement('div');
+    modalBodyDiv.classList.add('set-modal-body');
+    modalContent.appendChild(modalBodyDiv);
+
+    // Sending Method Setting
+    modalBodyDiv.innerHTML += '' +
+        '<label for="endMethodSel">روش ارسال</label>' +
+        '<select id="end-method" name="endMethodSel">' +
+        '  <option>زمان پایانی</option>' +
+        '  <option>تعداد ارسال</option>' +
+        '</select>';
+
+    // (12/24) Hours Setting
+    modalBodyDiv.innerHTML += '' +
+        '<label class="set-toggle-control f-left">' +
+        '  <input type="checkbox" id="24-hours">' +
+        '  <span class="control"></span>' +
+        '</label>' +
+        '<p>ورود و نمایش زمان در حالت زمان 24 ساعته</p>';
+
+    // Minimum Sending Interval Setting
+    modalBodyDiv.innerHTML += '' +
+        '<label class="set-toggle-control f-left">' +
+        '  <input type="checkbox" id="minimum-check">' +
+        '  <span class="control"></span>' +
+        '</label>' +
+        '<p>رعایت حداقل فاصله زمانی بین ارسال‌ها</p>';
+
+    // Tolerance Interval Setting
+    modalBodyDiv.innerHTML += '' +
+        '<label class="set-toggle-control f-left">' +
+        '  <input type="checkbox" id="interval-tolerance" checked="checked">' +
+        '  <span class="control"></span>' +
+        '</label>' +
+        '<p>نوسان در فاصله‌های زمانی بین ارسال‌ها</p>';
+
+
+    // Modal Footer
+    let modalFooterDiv = document.createElement('div');
+    modalFooterDiv.classList.add('set-modal-footer');
+    modalContent.appendChild(modalFooterDiv);
+
+    modalFooterDiv.innerHTML += '<p id="script-version" class="f-left">Ver. ' + scriptVersion + '</p>' ;
+
+    let modalSaveBtn = document.createElement('button');
+    modalSaveBtn.classList.add('save-button');
+    modalSaveBtn.innerText = 'ذخیره';
+    modalSaveBtn.style.cursor = 'pointer';
+    modalSaveBtn.onclick = saveButtonPressed;
+    modalFooterDiv.appendChild(modalSaveBtn);
+
+    let modalResetBtn = document.createElement('button');
+    modalResetBtn.classList.add('reset-button');
+    modalResetBtn.innerText = 'تنظیمات اولیه';
+    modalResetBtn.style.cursor = 'pointer';
+    modalResetBtn.onclick = resetButtonPressed;
+    modalFooterDiv.appendChild(modalResetBtn);
 
 
 
@@ -218,6 +316,15 @@
     divContainer.appendChild(submitBtn);
 
 
+    // Settings Button
+    let settingsBtn = document.createElement('button');
+    settingsBtn.classList.add('gray');
+    settingsBtn.innerText = 'تنظیمات...';
+    settingsBtn.style.cursor = 'pointer';
+    settingsBtn.onclick = settingsButtonPressed;
+    divContainer.appendChild(settingsBtn);
+
+
     // Presets Radio Buttons
     let presetsFieldset = document.createElement('fieldset');
 
@@ -257,23 +364,132 @@
     divContainer.appendChild(presetsFieldset);
 
 
-    // Add Manual Control Checkbox
-    let manualCheckbox = document.createElement('input');
-    manualCheckbox.type = 'checkbox';
-    manualCheckbox.id = 'manualCheckbox';
-    divContainer.appendChild(manualCheckbox);
-
-    let manualLabel = document.createElement('label');
-    manualLabel.setAttribute('for', 'manualCheckbox');
-    manualLabel.innerText = 'کنترل دستی';
-    divContainer.appendChild(manualLabel);
-
 
     // Add Styles
 
     let newStyles = document.createElement('style');
     newStyles.type = 'text/css';
     let stylesText =
+        '.set-modal * {' +
+        '    box-sizing: border-box;' +
+        '    font-family: inherit;' +
+        '    font-size: 11px;' +
+        '    color: black;' +
+        '}' +
+        '' +
+        '.set-modal {' +
+        '    display: none;' +
+        '    position: fixed;' +
+        '    z-index: 10000;' +
+        '    left: 0;' +
+        '    top: 0;' +
+        '    width: 100%;' +
+        '    height: 100%;' +
+        '    overflow: auto;' +
+        '    background-color: rgba(33, 37, 41, 0.4);' +
+        '}' +
+        '' +
+        '.set-modal-content {' +
+        '    position: relative;' +
+        '    box-sizing: border-box;' +
+        '    background-color: white;' +
+        '    margin: 10% auto;' +
+        '    border: 1px solid rgba(0, 0, 0, 0.2);' +
+        '    border-radius: 6px;' +
+        '    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);' +
+        '    width: 350px;' +
+        '}' +
+        '' +
+        '.set-modal-header, .set-modal-body {' +
+        '    padding: 15px;' +
+        '    border-bottom: 1px solid #e5e5e5;' +
+        '}' +
+        '' +
+        '.set-modal-footer {' +
+        '    padding: 15px;' +
+        '}' +
+        '' +
+        '.set-modal-title {' +
+        '    margin: 0;' +
+        '    font-size: 18px;' +
+        '}' +
+        '' +
+        '.set-modal-close {' +
+        '    color: #aaa;' +
+        '    position: absolute;' +
+        '    top: 0;' +
+        '    left: 0;' +
+        '    padding: 8px;' +
+        '    font-size: 28px;' +
+        '}' +
+        '' +
+        '.set-modal-content label {' +
+        '    display: inline-block;' +
+        '    margin-bottom: 8px;' +
+        '}' +
+        '' +
+        '.set-modal-content select {' +
+        '    display: block;' +
+        '    width: 100%;' +
+        '    height: 38px;' +
+        '    margin-bottom: 15px;' +
+        '    padding: 6px 12px;' +
+        '    border-radius: 4px;' +
+        '    border-color: #80bdff;' +
+        '    outline: 0;' +
+        '    box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);' +
+        '    font-size: 14px;' +
+        '}' +
+        '' +
+        '.set-modal-content p {' +
+        '    margin: 0;' +
+        '    padding: 15px 0;' +
+        '}' +
+        '' +
+        '#script-version {' +
+        '    font-style: italic;' +
+        '    color: #dae0e5;' +
+        '}' +
+        '' +
+        '.save-button {' +
+        '    color: white;' +
+        '    background-color: #007bff;' +
+        '    display: inline-block;' +
+        '    width: 100px;' +
+        '    padding: 6px 12px;' +
+        '    margin-left: 7.5px;' +
+        '    border: 1px solid #007bff;' +
+        '    border-radius: 4px;' +
+        '    -webkit-transition: all 0.15s ease-in-out;' +
+        '    -moz-transition: all 0.15s ease-in-out;' +
+        '    -o-transition: all 0.15s ease-in-out;' +
+        '    transition: all 0.15s ease-in-out;' +
+        '}' +
+        '' +
+        '.save-button:hover {' +
+        '    background-color: #0069d9;' +
+        '    border-color: #0062cc;' +
+        '}' +
+        '' +
+        '.reset-button {' +
+        '    color: white;' +
+        '    background-color: #6c757d;' +
+        '    display: inline-block;' +
+        '    width: 100px;' +
+        '    padding: 6px 12px;' +
+        '    border: 1px solid #6c757d;' +
+        '    border-radius: 4px;' +
+        '    -webkit-transition: all 0.15s ease-in-out;' +
+        '    -moz-transition: all 0.15s ease-in-out;' +
+        '    -o-transition: all 0.15s ease-in-out;' +
+        '    transition: all 0.15s ease-in-out;' +
+        '}' +
+        '' +
+        '.reset-button:hover {' +
+        '    background-color: #5a6268;' +
+        '    border-color: #545b62;' +
+        '}' +
+        '' +
         '.mySidebar * {' +
         '    box-sizing: border-box;' +
         '    font-family: inherit;' +
@@ -319,12 +535,12 @@
         '    width: 100%;' +
         '    padding: 0;' +
         '    border-radius: 4px;' +
-        '    border: var(--tp-3d-bu-gr-bo);' +
         '    color: white;' +
         '}' +
         '' +
         '.divContainer button.green {' +
         '    background-image: linear-gradient(var(--tp-3d-bu-gr));' +
+        '    border: var(--tp-3d-bu-gr-bo);' +
         '}' +
         '' +
         '.divContainer button.green:hover {' +
@@ -333,10 +549,21 @@
         '' +
         '.divContainer button.red {' +
         '    background-image: linear-gradient(var(--tp-3d-bu-re));' +
+        '    border: var(--tp-3d-bu-re-bo);' +
         '}' +
         '' +
         '.divContainer button.red:hover {' +
         '    background-image: linear-gradient(var(--tp-3d-bu-re-h));' +
+        '}' +
+        '' +
+        '.divContainer button.gray {' +
+        '    background-image: linear-gradient(var(--tp-3d-bu));' +
+        '    border: var(--tp-3d-bu-bo);' +
+        '    color: var(--tp-3d-bu-co);' +
+        '}' +
+        '' +
+        '.divContainer button.gray:hover {' +
+        '    background-image: linear-gradient(var(--tp-3d-bu-h));' +
         '}' +
         '' +
         '.divContainer fieldset {' +
@@ -348,6 +575,58 @@
         '}' +
         '.divContainer input[type=checkbox] {' +
         '    margin: 0 4px;' +
+        '}' +
+        '' +
+        '.f-left {' +
+        '    float: left;' +
+        '}';
+
+    // CSS for Toggle Switch
+    // https://codepen.io/garetmckinley/pen/YmxYZr
+    stylesText += '' +
+        '.set-toggle-control {' +
+        '    display: block;' +
+        '    position: relative;' +
+        '    margin-top: 9px;' +
+        '    padding-left: 55px;' +
+        '    margin-bottom: 12px;' +
+        '    cursor: pointer;' +
+        '    font-size: 22px;' +
+        '    user-select: none;' +
+        '}' +
+        '.set-toggle-control input {' +
+        '    position: absolute;' +
+        '    opacity: 0;' +
+        '    cursor: pointer;' +
+        '    height: 0;' +
+        '    width: 0;' +
+        '}' +
+        '.set-toggle-control input:checked ~ .control {' +
+        '    background-color: #007bff;' +
+        '}' +
+        '.set-toggle-control input:checked ~ .control:after {' +
+        '    left: 28px;' +
+        '}' +
+        '.set-toggle-control .control {' +
+        '    position: absolute;' +
+        '    top: 0;' +
+        '    left: 0;' +
+        '    height: 30px;' +
+        '    width: 55px;' +
+        '    border-radius: 15px;' +
+        '    background-color: #dae0e5;' +
+        '    transition: background-color 0.2s ease-in;' +
+        '}' +
+        '.set-toggle-control .control:after {' +
+        '    content: "";' +
+        '    position: absolute;' +
+        '    left: 3px;' +
+        '    top: 3px;' +
+        '    width: 24px;' +
+        '    height: 24px;' +
+        '    border-radius: 15px;' +
+        '    background: white;' +
+        '    transition: left 0.2s ease-in;' +
         '}';
     newStyles.innerText = stylesText;
     document.head.appendChild(newStyles);
@@ -583,7 +862,60 @@
     }
 
 
+    // Settings Button Pressed
+    function settingsButtonPressed() {
+
+        // Set the Values
+        document.getElementById('end-method').selectedIndex = sendingMethod;
+        document.getElementById('24-hours').checked = is24hours;
+        document.getElementById('minimum-check').checked = isManualCheck;
+        document.getElementById('interval-tolerance').checked = (isTolerance > 0) ? true : false;
+
+        modalContainer.style.display = 'block';
+    }
+
+
+    // Close Button Pressed
+    function closeSettingsPressed() {
+        modalContainer.style.display = 'none';
+    }
+
+
+    // Modal Clicked
+    window.onclick = function(event) {
+        if (event.target == modalContainer) {
+            modalContainer.style.display = 'none';
+        }
+    }
+
+
+    // Modal Save Button Pressed
+    function saveButtonPressed() {
+        sendingMethod = document.getElementById('end-method').selectedIndex;
+        GM_setValue('sendingMethod', sendingMethod);
+        is24hours = document.getElementById('24-hours').checked;
+        GM_setValue('hours24', is24hours);
+        isManualCheck = document.getElementById('minimum-check').checked;
+        GM_setValue('manualCheck', isManualCheck);
+        // GM_setValue('tolerance', document.getElementById('24-hours').checked);
+        // document.getElementById('interval-tolerance').checked = (isTolerance > 0) ? true : false;
+        closeSettingsPressed();
+    }
+
+
+    // Modal Reset Button Pressed
+    function resetButtonPressed() {
+        document.getElementById('end-method').selectedIndex = 0;
+        document.getElementById('24-hours').checked = false;
+        document.getElementById('minimum-check').checked = true;
+        // GM_setValue('tolerance', document.getElementById('24-hours').checked);
+        // document.getElementById('interval-tolerance').checked = (isTolerance > 0) ? true : false;
+    }
+
+
+
     // Onload Function Goes Here
+
 
     const observerConfig = { attributes: true };
 
