@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Buyer/Seller Test
 // @namespace    http://tampermonkey.net/
-// @version      0.40
+// @version      0.45
 // @description  try to take over the world!
 // @author       Amir K.
 // @updateURL    https://raw.githubusercontent.com/amir1782/buyer-seller/master/buyer-seller.meta.js

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Buyer/Seller Test
 // @namespace    http://tampermonkey.net/
-// @version      0.40
+// @version      0.45
 // @description  try to take over the world!
 // @author       Amir K.
 // @updateURL    https://raw.githubusercontent.com/amir1782/buyer-seller/master/buyer-seller.meta.js
@@ -44,14 +44,18 @@
     let isTolerance =GM_getValue('tolerance', 50);
 
     const PRESET1_INITIAL_TIME = GM_getValue('PR1_INIT', '8:29:55');
+    const PRESET1_FINISH_TIME = GM_getValue('PR1_FINISH', '8:30:01');
     const PRESET1_ORDER_NUMBER = GM_getValue('PR1_NUM', '15');
     const PRESET1_TIME_INTERVAL = GM_getValue('PR1_INT', '500');
     const PRESET1_TIME_TOLERANCE = GM_getValue('PR1_TOL', '10');
 
     const PRESET2_INITIAL_TIME = GM_getValue('PR2_INIT', '12:34:55');
+    const PRESET2_FINISH_TIME = GM_getValue('PR2_FINISH', '12:35:01');
     const PRESET2_ORDER_NUMBER = GM_getValue('PR2_NUM', '15');
     const PRESET2_TIME_INTERVAL = GM_getValue('PR2_INT', '500');
     const PRESET2_TIME_TOLERANCE = GM_getValue('PR2_TOL', '10');
+
+    const REFRESH_TIME_INTERVAL = 1000;
 
 
 
@@ -197,10 +201,7 @@
 
 
     // Symbol Label & Input
-    let symLabel = document.createElement('label');
-    symLabel.innerText = 'نماد:';
-    formContainer.appendChild(symLabel);
-
+    formContainer.innerHTML += '<label>نماد:</label>';
     let symInput = document.createElement('input');
     symInput.type = 'text';
     symInput.name = 'symName';
@@ -222,10 +223,7 @@
 
 
     // Share Number Label & Input
-    let shareNumLabel = document.createElement('label');
-    shareNumLabel.innerText = 'تعداد سهم:';
-    formContainer.appendChild(shareNumLabel);
-
+    formContainer.innerHTML += '<label>تعداد سهم:</label>';
     let shareNumInput = document.createElement('input');
     shareNumInput.classList.add('numberField');
     shareNumInput.type = 'text';
@@ -241,10 +239,7 @@
 
 
     // Price Label & Input
-    let sharePriceLabel = document.createElement('label');
-    sharePriceLabel.innerText = 'قیمت سهم:';
-    formContainer.appendChild(sharePriceLabel);
-
+    formContainer.innerHTML += '<label>قیمت سهم:</label>';
     let sharePriceInput = document.createElement('input');
     sharePriceInput.classList.add('numberField');
     sharePriceInput.type = 'text';
@@ -259,35 +254,44 @@
     formContainer.appendChild(sharePriceInput);
 
 
-    // Time Label & Input
-    let timeLabel = document.createElement('label');
-    timeLabel.innerText = 'زمان ارسال سفارش:';
-    formContainer.appendChild(timeLabel);
+    // Start Time Label & Input
+    formContainer.innerHTML += '<label>زمان شروع ارسال‌ها:</label>';
+    let startTimeInput = document.createElement('input');
+    startTimeInput.type = 'text';
+    startTimeInput.name = 'timeText';
+    startTimeInput.value = PRESET1_INITIAL_TIME;
+    formContainer.appendChild(startTimeInput);
 
-    let timeInput = document.createElement('input');
-    timeInput.type = 'text';
-    timeInput.name = 'timeText';
-    timeInput.value = PRESET1_INITIAL_TIME;
-    formContainer.appendChild(timeInput);
+
+    // Finish Time Div & Label & Input
+    let finishTimeDiv = document.createElement('div');
+    finishTimeDiv.id = 'finish-div';
+    formContainer.appendChild(finishTimeDiv);
+
+    finishTimeDiv.innerHTML = '<label>زمان توقف ارسال‌ها:</label>';
+    let finishTimeInput = document.createElement('input');
+    finishTimeInput.type = 'text';
+    finishTimeInput.name = 'timeText';
+    finishTimeInput.value = PRESET1_FINISH_TIME;
+    finishTimeDiv.appendChild(finishTimeInput);
 
 
     // Number Label & Input
-    let numLabel = document.createElement('label');
-    numLabel.innerText = 'تعداد ارسال سفارش:';
-    formContainer.appendChild(numLabel);
+    let numDiv = document.createElement('div');
+    numDiv.id = 'num-div';
+    formContainer.appendChild(numDiv);
 
+    numDiv.innerHTML = '<label>تعداد ارسال سفارش‌ها:</label>';
     let numInput = document.createElement('input');
     numInput.type = 'number';
     numInput.name = 'numText';
     numInput.value = PRESET1_ORDER_NUMBER;
-    formContainer.appendChild(numInput);
+    numDiv.appendChild(numInput);
 
+    finishTimeDiv.style.display = 'none';
 
     // Interval Label & Input
-    let difLabel = document.createElement('label');
-    difLabel.innerText = 'فاصله زمانی: (میلی ثانیه)';
-    formContainer.appendChild(difLabel);
-
+    formContainer.innerHTML += '<label>فاصله زمانی: (میلی ثانیه)</label>';
     let difInput = document.createElement('input');
     difInput.type = 'number';
     difInput.name = 'difText';
@@ -296,15 +300,15 @@
 
 
     // Tolerance Label & Input
-    let tolLabel = document.createElement('label');
-    tolLabel.innerText = 'نوسان زمانی: (میلی ثانیه)';
-    formContainer.appendChild(tolLabel);
-
-    let tolInput = document.createElement('input');
-    tolInput.type = 'number';
-    tolInput.name = 'difText';
-    tolInput.value = PRESET1_TIME_TOLERANCE;
-    formContainer.appendChild(tolInput);
+    // let tolLabel = document.createElement('label');
+    // tolLabel.innerText = 'نوسان زمانی: (میلی ثانیه)';
+    // formContainer.appendChild(tolLabel);
+    //
+    // let tolInput = document.createElement('input');
+    // tolInput.type = 'number';
+    // tolInput.name = 'difText';
+    // tolInput.value = PRESET1_TIME_TOLERANCE;
+    // formContainer.appendChild(tolInput);
 
 
     // Submit Button
@@ -319,49 +323,49 @@
     // Settings Button
     let settingsBtn = document.createElement('button');
     settingsBtn.classList.add('gray');
-    settingsBtn.innerText = 'تنظیمات...';
+    settingsBtn.innerText = 'تنظیمات';
     settingsBtn.style.cursor = 'pointer';
     settingsBtn.onclick = settingsButtonPressed;
     divContainer.appendChild(settingsBtn);
 
 
     // Presets Radio Buttons
-    let presetsFieldset = document.createElement('fieldset');
-
-    let presetsFieldsetLegend = document.createElement('legend');
-    presetsFieldsetLegend.innerText = 'پیش فرض';
-    presetsFieldset.appendChild(presetsFieldsetLegend);
-
-    let preset1 = document.createElement('input');
-    preset1.type = 'radio';
-    preset1.id = 'preset1';
-    preset1.name = 'presets';
-    preset1.value = '1';
-    preset1.onclick = presetSelected;
-    presetsFieldset.appendChild(preset1);
-
-    let presetLabel1 = document.createElement('label');
-    presetLabel1.setAttribute('for', 'preset1');
-    presetLabel1.innerText = 'پیش فرض 8:30';
-    presetsFieldset.appendChild(presetLabel1);
-
-    let lineBreak = document.createElement('br');
-    presetsFieldset.appendChild(lineBreak);
-
-    let preset2 = document.createElement('input');
-    preset2.type = 'radio';
-    preset2.id = 'preset2';
-    preset2.name = 'presets';
-    preset2.value = '2';
-    preset2.onclick = presetSelected;
-    presetsFieldset.appendChild(preset2);
-
-    let presetLabel2 = document.createElement('label');
-    presetLabel2.setAttribute('for', 'preset2');
-    presetLabel2.innerText = 'پیش فرض 12:30';
-    presetsFieldset.appendChild(presetLabel2);
-
-    divContainer.appendChild(presetsFieldset);
+    // let presetsFieldset = document.createElement('fieldset');
+    //
+    // let presetsFieldsetLegend = document.createElement('legend');
+    // presetsFieldsetLegend.innerText = 'پیش فرض';
+    // presetsFieldset.appendChild(presetsFieldsetLegend);
+    //
+    // let preset1 = document.createElement('input');
+    // preset1.type = 'radio';
+    // preset1.id = 'preset1';
+    // preset1.name = 'presets';
+    // preset1.value = '1';
+    // preset1.onclick = presetSelected;
+    // presetsFieldset.appendChild(preset1);
+    //
+    // let presetLabel1 = document.createElement('label');
+    // presetLabel1.setAttribute('for', 'preset1');
+    // presetLabel1.innerText = 'پیش فرض 8:30';
+    // presetsFieldset.appendChild(presetLabel1);
+    //
+    // let lineBreak = document.createElement('br');
+    // presetsFieldset.appendChild(lineBreak);
+    //
+    // let preset2 = document.createElement('input');
+    // preset2.type = 'radio';
+    // preset2.id = 'preset2';
+    // preset2.name = 'presets';
+    // preset2.value = '2';
+    // preset2.onclick = presetSelected;
+    // presetsFieldset.appendChild(preset2);
+    //
+    // let presetLabel2 = document.createElement('label');
+    // presetLabel2.setAttribute('for', 'preset2');
+    // presetLabel2.innerText = 'پیش فرض 12:30';
+    // presetsFieldset.appendChild(presetLabel2);
+    //
+    // divContainer.appendChild(presetsFieldset);
 
 
 
@@ -511,6 +515,7 @@
         '    width: 50%;' +
         '    height: 30px;' +
         '    border: none;' +
+        '    margin-bottom: 16px;' +
         '}' +
         '' +
         '.divContainer {' +
@@ -557,13 +562,13 @@
         '}' +
         '' +
         '.divContainer button.gray {' +
-        '    background-image: linear-gradient(var(--tp-3d-bu));' +
-        '    border: var(--tp-3d-bu-bo);' +
-        '    color: var(--tp-3d-bu-co);' +
+        '    background-image: linear-gradient(#919191, #595959);' +
+        // '    border: var(--tp-3d-bu-bo);' +
+        '    color: white;' +
         '}' +
         '' +
         '.divContainer button.gray:hover {' +
-        '    background-image: linear-gradient(var(--tp-3d-bu-h));' +
+        '    background-image: linear-gradient(#c7c7c7, #919191);' +
         '}' +
         '' +
         '.divContainer fieldset {' +
@@ -637,7 +642,7 @@
 
 
     // Time Interval for Looking Input Changes
-    let i = setInterval(checkInputs, 1000);
+    let i = setInterval(checkInputs, REFRESH_TIME_INTERVAL);
     function checkInputs() {
         if (observableNum != null) { shareNumInput.value = observableNum.value; }
         if (observablePrice != null) { sharePriceInput.value = observablePrice.value; }
@@ -646,19 +651,21 @@
 
     // Disable Input Items
     function disableItems() {
-        timeInput.disabled = true;
+        startTimeInput.disabled = true;
+        finishTimeInput.disabled = true;
         numInput.disabled = true;
         difInput.disabled = true;
-        tolInput.disabled = true;
+        // tolInput.disabled = true;
     }
 
 
     // Enable Input Items
     function enableItems() {
-        timeInput.disabled = false;
+        startTimeInput.disabled = false;
+        finishTimeInput.disabled = false;
         numInput.disabled = false;
         difInput.disabled = false;
-        tolInput.disabled = false;
+        // tolInput.disabled = false;
     }
 
 
@@ -686,6 +693,21 @@
     }
 
 
+    // Refresh UI
+    function refreshUI() {
+        // alert(sendingMethod);
+        let finishDivTemp = document.getElementById('finish-div');
+        let numDivTemp = document.getElementById('num-div');
+        if (sendingMethod == 0) {
+            finishDivTemp.style.display = 'block';
+            numDivTemp.style.display = 'none';
+        } else {
+            finishDivTemp.style.display = 'none';
+            numDivTemp.style.display = 'block';
+        }
+    }
+
+
     // Buy Nav Button Pressed
     function buyNavPressed() {
         let mainBuyDiv = document.getElementsByClassName('orderside65')[0];
@@ -703,15 +725,15 @@
     // Preset Selected
     function presetSelected() {
         if (preset1.checked) {
-            timeInput.value = PRESET1_INITIAL_TIME;
+            startTimeInput.value = PRESET1_INITIAL_TIME;
             numInput.value = PRESET1_ORDER_NUMBER;
             difInput.value = PRESET1_TIME_INTERVAL;
-            tolInput.value = PRESET1_TIME_TOLERANCE;
+            // tolInput.value = PRESET1_TIME_TOLERANCE;
         } else if (preset2.checked) {
-            timeInput.value = PRESET2_INITIAL_TIME;
+            startTimeInput.value = PRESET2_INITIAL_TIME;
             numInput.value = PRESET2_ORDER_NUMBER;
             difInput.value = PRESET2_TIME_INTERVAL;
-            tolInput.value = PRESET2_TIME_TOLERANCE;
+            // tolInput.value = PRESET2_TIME_TOLERANCE;
         }
     }
 
@@ -758,7 +780,7 @@
                 if (sendButton != null) {
                     iter = 1;
                     totalIter = parseInt(numInput.value);
-                    maxRandomSeconds = parseInt(tolInput.value);
+                    maxRandomSeconds = 0;   //parseInt(tolInput.value);
                     clearInterval(checkingTimer);
                     sendingTimer = setInterval(startSendingOrders, diff);
                 }
@@ -811,12 +833,12 @@
                 type: 'error'
             });
             return false;
-        } else if (isNaN(parseInt(tolInput.value))) {
-            Notify({
-                text: 'لطفاً نوسان زمانی را مشخص کنید',
-                type: 'error'
-            });
-            return false;
+        // } else if (isNaN(parseInt(tolInput.value))) {
+        //     Notify({
+        //         text: 'لطفاً نوسان زمانی را مشخص کنید',
+        //         type: 'error'
+        //     });
+        //     return false;
         } else if (parseInt(difInput.value) < 0) {
             Notify({
                 text: 'حداقل نوسان زمانی می‌بایست 0 باشد',
@@ -832,7 +854,7 @@
     function submitButtonPressed() {
 
         if (validateInputItems()) {
-            let timeArr = timeInput.value.split(':');
+            let timeArr = startTimeInput.value.split(':');
             let hours = timeArr[0].padStart(2, '0');
             let minutes = timeArr[1] ? timeArr[1].padStart(2, '0') : '00';
             let seconds = timeArr[2] ? timeArr[2].padStart(2, '0') : '00';
@@ -899,6 +921,7 @@
         GM_setValue('manualCheck', isManualCheck);
         // GM_setValue('tolerance', document.getElementById('24-hours').checked);
         // document.getElementById('interval-tolerance').checked = (isTolerance > 0) ? true : false;
+        refreshUI();
         closeSettingsPressed();
     }
 
@@ -915,6 +938,9 @@
 
 
     // Onload Function Goes Here
+
+
+    refreshUI();
 
 
     const observerConfig = { attributes: true };
