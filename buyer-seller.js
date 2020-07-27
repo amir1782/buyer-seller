@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Buyer/Seller Test
 // @namespace    http://tampermonkey.net/
-// @version      0.45
+// @version      0.50
 // @description  try to take over the world!
 // @author       Amir K.
 // @updateURL    https://raw.githubusercontent.com/amir1782/buyer-seller/master/buyer-seller.meta.js
@@ -21,7 +21,7 @@
 (function() {
     'use strict';
 
-    const scriptVersion = '0.40';
+    const scriptVersion = '0.50';
 
 
 
@@ -30,12 +30,15 @@
     let buyTabActivated = true;
     let sendingTimer;
     let checkingTimer;
+    let finishTimer;
     let sendButton;
     let diff = 0;
     let iter = 0;
     let totalIter = 0;
     let timeStr1 = '';
     let timeStr2 = '';
+    let finishTimeStr1 = '';
+    let finishTimeStr2 = '';
     let maxRandomSeconds = 0;
 
     let sendingMethod = GM_getValue('sendingMethod', 0);
@@ -47,15 +50,14 @@
     const PRESET1_FINISH_TIME = GM_getValue('PR1_FINISH', '8:30:01');
     const PRESET1_ORDER_NUMBER = GM_getValue('PR1_NUM', '15');
     const PRESET1_TIME_INTERVAL = GM_getValue('PR1_INT', '500');
-    const PRESET1_TIME_TOLERANCE = GM_getValue('PR1_TOL', '10');
 
     const PRESET2_INITIAL_TIME = GM_getValue('PR2_INIT', '12:34:55');
     const PRESET2_FINISH_TIME = GM_getValue('PR2_FINISH', '12:35:01');
     const PRESET2_ORDER_NUMBER = GM_getValue('PR2_NUM', '15');
     const PRESET2_TIME_INTERVAL = GM_getValue('PR2_INT', '500');
-    const PRESET2_TIME_TOLERANCE = GM_getValue('PR2_TOL', '10');
 
     const REFRESH_TIME_INTERVAL = 1000;
+    const CHECKING_TIME_INTERVAL = 200;
 
 
 
@@ -77,13 +79,13 @@
     // Modal Header
     let modalHeaderDiv = document.createElement('div');
     modalHeaderDiv.classList.add('set-modal-header');
-    modalHeaderDiv.innerHTML += '<h4 class="set-modal-title">تنظیمات</h4>';
+    modalHeaderDiv.insertAdjacentHTML('beforeend', '<h4 class="set-modal-title">تنظیمات</h4>');
     modalContent.appendChild(modalHeaderDiv);
 
     let closeSettingsSpan = document.createElement('span');
     closeSettingsSpan.classList.add('set-modal-close');
     closeSettingsSpan.style.cursor = 'pointer';
-    closeSettingsSpan.innerHTML = '&times;';
+    closeSettingsSpan.insertAdjacentHTML('afterbegin', '&times;');
     closeSettingsSpan.onclick = closeSettingsPressed;
     modalHeaderDiv.appendChild(closeSettingsSpan);
 
@@ -94,36 +96,40 @@
     modalContent.appendChild(modalBodyDiv);
 
     // Sending Method Setting
-    modalBodyDiv.innerHTML += '' +
+    modalBodyDiv.insertAdjacentHTML('beforeend', '' +
         '<label for="endMethodSel">روش ارسال</label>' +
         '<select id="end-method" name="endMethodSel">' +
         '  <option>زمان پایانی</option>' +
         '  <option>تعداد ارسال</option>' +
-        '</select>';
+        '</select>'
+    );
 
     // (12/24) Hours Setting
-    modalBodyDiv.innerHTML += '' +
+    modalBodyDiv.insertAdjacentHTML('beforeend', '' +
         '<label class="set-toggle-control f-left">' +
         '  <input type="checkbox" id="24-hours">' +
         '  <span class="control"></span>' +
         '</label>' +
-        '<p>ورود و نمایش زمان در حالت زمان 24 ساعته</p>';
+        '<p>ورود و نمایش زمان در حالت زمان 24 ساعته</p>'
+    );
 
     // Minimum Sending Interval Setting
-    modalBodyDiv.innerHTML += '' +
+    modalBodyDiv.insertAdjacentHTML('beforeend', '' +
         '<label class="set-toggle-control f-left">' +
         '  <input type="checkbox" id="minimum-check">' +
         '  <span class="control"></span>' +
         '</label>' +
-        '<p>رعایت حداقل فاصله زمانی بین ارسال‌ها</p>';
+        '<p>رعایت حداقل فاصله زمانی بین ارسال‌ها</p>'
+    );
 
     // Tolerance Interval Setting
-    modalBodyDiv.innerHTML += '' +
+    modalBodyDiv.insertAdjacentHTML('beforeend', '' +
         '<label class="set-toggle-control f-left">' +
         '  <input type="checkbox" id="interval-tolerance" checked="checked">' +
         '  <span class="control"></span>' +
         '</label>' +
-        '<p>نوسان در فاصله‌های زمانی بین ارسال‌ها</p>';
+        '<p>نوسان در فاصله‌های زمانی بین ارسال‌ها</p>'
+    );
 
 
     // Modal Footer
@@ -131,7 +137,7 @@
     modalFooterDiv.classList.add('set-modal-footer');
     modalContent.appendChild(modalFooterDiv);
 
-    modalFooterDiv.innerHTML += '<p id="script-version" class="f-left">Ver. ' + scriptVersion + '</p>' ;
+    modalFooterDiv.insertAdjacentHTML('beforeend', '<p id="script-version" class="f-left">Ver. ' + scriptVersion + '</p>');
 
     let modalSaveBtn = document.createElement('button');
     modalSaveBtn.classList.add('save-button');
@@ -201,7 +207,7 @@
 
 
     // Symbol Label & Input
-    formContainer.innerHTML += '<label>نماد:</label>';
+    formContainer.insertAdjacentHTML('beforeend', '<label>نماد:</label>');
     let symInput = document.createElement('input');
     symInput.type = 'text';
     symInput.name = 'symName';
@@ -223,7 +229,7 @@
 
 
     // Share Number Label & Input
-    formContainer.innerHTML += '<label>تعداد سهم:</label>';
+    formContainer.insertAdjacentHTML('beforeend', '<label>تعداد سهم:</label>');
     let shareNumInput = document.createElement('input');
     shareNumInput.classList.add('numberField');
     shareNumInput.type = 'text';
@@ -239,7 +245,7 @@
 
 
     // Price Label & Input
-    formContainer.innerHTML += '<label>قیمت سهم:</label>';
+    formContainer.insertAdjacentHTML('beforeend', '<label>قیمت سهم:</label>');
     let sharePriceInput = document.createElement('input');
     sharePriceInput.classList.add('numberField');
     sharePriceInput.type = 'text';
@@ -255,7 +261,7 @@
 
 
     // Start Time Label & Input
-    formContainer.innerHTML += '<label>زمان شروع ارسال‌ها:</label>';
+    formContainer.insertAdjacentHTML('beforeend', '<label>زمان شروع ارسال‌ها:</label>');
     let startTimeInput = document.createElement('input');
     startTimeInput.type = 'text';
     startTimeInput.name = 'timeText';
@@ -268,7 +274,7 @@
     finishTimeDiv.id = 'finish-div';
     formContainer.appendChild(finishTimeDiv);
 
-    finishTimeDiv.innerHTML = '<label>زمان توقف ارسال‌ها:</label>';
+    finishTimeDiv.insertAdjacentHTML('beforeend', '<label>زمان توقف ارسال‌ها:</label>');
     let finishTimeInput = document.createElement('input');
     finishTimeInput.type = 'text';
     finishTimeInput.name = 'timeText';
@@ -281,17 +287,16 @@
     numDiv.id = 'num-div';
     formContainer.appendChild(numDiv);
 
-    numDiv.innerHTML = '<label>تعداد ارسال سفارش‌ها:</label>';
+    numDiv.insertAdjacentHTML('beforeend', '<label>تعداد ارسال سفارش‌ها:</label>');
     let numInput = document.createElement('input');
     numInput.type = 'number';
     numInput.name = 'numText';
     numInput.value = PRESET1_ORDER_NUMBER;
     numDiv.appendChild(numInput);
 
-    finishTimeDiv.style.display = 'none';
 
     // Interval Label & Input
-    formContainer.innerHTML += '<label>فاصله زمانی: (میلی ثانیه)</label>';
+    formContainer.insertAdjacentHTML('beforeend', '<label>فاصله زمانی: (میلی ثانیه)</label>');
     let difInput = document.createElement('input');
     difInput.type = 'number';
     difInput.name = 'difText';
@@ -655,7 +660,6 @@
         finishTimeInput.disabled = true;
         numInput.disabled = true;
         difInput.disabled = true;
-        // tolInput.disabled = true;
     }
 
 
@@ -665,7 +669,6 @@
         finishTimeInput.disabled = false;
         numInput.disabled = false;
         difInput.disabled = false;
-        // tolInput.disabled = false;
     }
 
 
@@ -695,7 +698,6 @@
 
     // Refresh UI
     function refreshUI() {
-        // alert(sendingMethod);
         let finishDivTemp = document.getElementById('finish-div');
         let numDivTemp = document.getElementById('num-div');
         if (sendingMethod == 0) {
@@ -723,19 +725,17 @@
 
 
     // Preset Selected
-    function presetSelected() {
-        if (preset1.checked) {
-            startTimeInput.value = PRESET1_INITIAL_TIME;
-            numInput.value = PRESET1_ORDER_NUMBER;
-            difInput.value = PRESET1_TIME_INTERVAL;
-            // tolInput.value = PRESET1_TIME_TOLERANCE;
-        } else if (preset2.checked) {
-            startTimeInput.value = PRESET2_INITIAL_TIME;
-            numInput.value = PRESET2_ORDER_NUMBER;
-            difInput.value = PRESET2_TIME_INTERVAL;
-            // tolInput.value = PRESET2_TIME_TOLERANCE;
-        }
-    }
+    // function presetSelected() {
+    //     if (preset1.checked) {
+    //         startTimeInput.value = PRESET1_INITIAL_TIME;
+    //         numInput.value = PRESET1_ORDER_NUMBER;
+    //         difInput.value = PRESET1_TIME_INTERVAL;
+    //     } else if (preset2.checked) {
+    //         startTimeInput.value = PRESET2_INITIAL_TIME;
+    //         numInput.value = PRESET2_ORDER_NUMBER;
+    //         difInput.value = PRESET2_TIME_INTERVAL;
+    //     }
+    // }
 
 
     // Clear All Time Intervals
@@ -746,6 +746,9 @@
         if (sendingTimer != null) {
             clearInterval(sendingTimer);
         }
+        if (finishTimer != null) {
+            clearInterval(finishTimer);
+        }
         enableItems();
         submitBtn.classList.replace('red', 'green');
         submitBtn.innerText = 'ثبت سفارش';
@@ -755,17 +758,17 @@
 
     // Set Time Interval for Sending Orders
     function startSendingOrders() {
-        if (iter <= totalIter) {
-            sendButton.click();
-            let randomSeconds = Math.floor(Math.random() * maxRandomSeconds);
-            console.log(iter, Date.now(), diff + randomSeconds);
-
-            clearInterval(sendingTimer);
-            sendingTimer = setInterval(startSendingOrders, diff + randomSeconds);
-        } else {
-            stopSendingOrders();
+        sendButton.click();
+        if (sendingMethod == 1) {
+            if (iter > totalIter) {
+                stopSendingOrders();
+                return;
+            }
+            iter++;
         }
-        iter++;
+        let randomSeconds = Math.floor(Math.random() * maxRandomSeconds);
+        clearInterval(sendingTimer);
+        sendingTimer = setInterval(startSendingOrders, diff + randomSeconds);
     }
 
 
@@ -778,12 +781,29 @@
                 // Set Time Interval for Checking Time
                 sendButton = document.getElementById('send_order_btnSendOrder');
                 if (sendButton != null) {
-                    iter = 1;
-                    totalIter = parseInt(numInput.value);
+                    if (sendingMethod == 1) {
+                        iter = 1;
+                        totalIter = parseInt(numInput.value);
+                    }
                     maxRandomSeconds = 0;   //parseInt(tolInput.value);
                     clearInterval(checkingTimer);
                     sendingTimer = setInterval(startSendingOrders, diff);
+                    if (sendingMethod == 0) {
+                        finishTimer = setInterval(checkForFinish, CHECKING_TIME_INTERVAL);
+                    }
                 }
+            }
+        }
+    }
+
+
+
+    // Set Time Interval for Checking Finish Time
+    function checkForFinish() {
+        let timeNow = document.querySelector('clock.clock').innerText;
+        if (timeNow != null) {
+            if (timeNow == finishTimeStr1 || timeNow == finishTimeStr2) {
+                stopSendingOrders();
             }
         }
     }
@@ -809,42 +829,32 @@
                 type: 'error'
             });
             return false;
-        } else if (isNaN(parseInt(numInput.value))) {
-            Notify({
-                text: 'لطفاً تعداد ارسال سفارش را مشخص کنید',
-                type: 'error'
-            });
-            return false;
-        } else if (parseInt(numInput.value) < 1) {
-            Notify({
-                text: 'حداقل تعداد سفارش می‌بایست 1 باشد',
-                type: 'error'
-            });
-            return false;
+        } else if (sendingMethod == 1) {
+            if (isNaN(parseInt(numInput.value))) {
+                Notify({
+                    text: 'لطفاً تعداد ارسال سفارش را مشخص کنید',
+                    type: 'error'
+                });
+                return false;
+            } else if (parseInt(numInput.value) < 1) {
+                Notify({
+                    text: 'حداقل تعداد سفارش می‌بایست 1 باشد',
+                    type: 'error'
+                });
+                return false;
+            }
         } else if (isNaN(parseInt(difInput.value))) {
             Notify({
                 text: 'لطفاً فاصله زمانی را مشخص کنید',
                 type: 'error'
             });
             return false;
-        } else if (!manualCheckbox.checked && parseInt(difInput.value) < 300) {
-            Notify({
-                text: 'حداقل فاصله زمانی می‌بایست 300ms باشد',
-                type: 'error'
-            });
-            return false;
-        // } else if (isNaN(parseInt(tolInput.value))) {
+        // } else if (!manualCheckbox.checked && parseInt(difInput.value) < 300) {
         //     Notify({
-        //         text: 'لطفاً نوسان زمانی را مشخص کنید',
+        //         text: 'حداقل فاصله زمانی می‌بایست 300ms باشد',
         //         type: 'error'
         //     });
         //     return false;
-        } else if (parseInt(difInput.value) < 0) {
-            Notify({
-                text: 'حداقل نوسان زمانی می‌بایست 0 باشد',
-                type: 'error'
-            });
-            return false;
         }
         return true;
     }
@@ -854,6 +864,8 @@
     function submitButtonPressed() {
 
         if (validateInputItems()) {
+
+            // Parsing Start Time
             let timeArr = startTimeInput.value.split(':');
             let hours = timeArr[0].padStart(2, '0');
             let minutes = timeArr[1] ? timeArr[1].padStart(2, '0') : '00';
@@ -870,12 +882,36 @@
             }
             timeStr2 = hours + ':' + minutes + ':' + seconds;
 
+            console.log(timeStr1, '\n', timeStr2);
+
+            // Parsing Finish Time
+            if (sendingMethod == 0) {
+                let finishTimeArr = finishTimeInput.value.split(':');
+                let hours = finishTimeArr[0].padStart(2, '0');
+                let minutes = finishTimeArr[1] ? finishTimeArr[1].padStart(2, '0') : '00';
+                let seconds = finishTimeArr[2] ? finishTimeArr[2].padStart(2, '0') : '00';
+
+                finishTimeStr1 = hours + ':' + minutes + ':' + seconds;
+                let hoursNum = parseInt(hours);
+                if (parseInt(timeArr[0]) < 12) {
+                    let hoursNum = parseInt(timeArr[0]) + 12;
+                    hours = hoursNum.toString();
+                } else {
+                    let hoursNum = parseInt(timeArr[0]) - 12;
+                    hours = hoursNum.toString().padStart(2, '0');
+                }
+                finishTimeStr2 = hours + ':' + minutes + ':' + seconds;
+
+                console.log(finishTimeStr1, '\n', finishTimeStr2);
+            }
+
+
             // Set Time Interval for Checking Time
             diff = parseInt(difInput.value);
             sendButton = document.getElementById('send_order_btnSendOrder');
             if (!isNaN(diff) && sendButton != null) {
                 disableItems();
-                checkingTimer = setInterval(startCheckingTimes, diff);
+                checkingTimer = setInterval(startCheckingTimes, CHECKING_TIME_INTERVAL);
                 submitBtn.classList.replace('green', 'red');
                 submitBtn.innerText = 'توقف سفارش';
                 submitBtn.onclick = stopSendingOrders;
