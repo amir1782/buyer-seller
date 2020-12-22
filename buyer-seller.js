@@ -1,14 +1,14 @@
 // ==UserScript==
 // @name         Buyer/Seller Test
 // @namespace    http://tampermonkey.net/
-// @version      0.50
+// @version      0.51
 // @description  try to take over the world!
 // @author       Amir K.
 // @updateURL    https://raw.githubusercontent.com/amir1782/buyer-seller/master/buyer-seller.meta.js
 // @downloadURL  https://raw.githubusercontent.com/amir1782/buyer-seller/master/buyer-seller.js
-// @match        https://onlineplus.mofidonline.com
-// @match        https://onlineplus.mofidonline.com/Home/Default/page-1
-// @match        https://onlineplus.mofidonline.com/Home/Default
+// @match        https://*.mofidonline.com
+// @match        https://*.mofidonline.com/Home/Default/page-1
+// @match        https://*.mofidonline.com/Home/Default
 // @match        https://onlineplus.mofidonline.com/Home/Default2
 // @match        https://silver.nashbro.com
 // @match        https://silver.nashbro.com/Home/Default/page-1
@@ -21,7 +21,7 @@
 (function() {
     'use strict';
 
-    const scriptVersion = '0.50';
+    const scriptVersion = '0.51';
 
 
 
