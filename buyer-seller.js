@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Buyer/Seller Test
 // @namespace    http://tampermonkey.net/
-// @version      0.51
+// @version      0.52
 // @description  try to take over the world!
 // @author       Amir K.
 // @updateURL    https://raw.githubusercontent.com/amir1782/buyer-seller/master/buyer-seller.meta.js
@@ -21,7 +21,7 @@
 (function() {
     'use strict';
 
-    const scriptVersion = '0.51';
+    const scriptVersion = '0.52';
 
 
 
@@ -46,10 +46,10 @@
     let isManualCheck = GM_getValue('manualCheck', true);
     let isTolerance =GM_getValue('tolerance', 50);
 
-    const PRESET1_INITIAL_TIME = GM_getValue('PR1_INIT', '8:29:55');
-    const PRESET1_FINISH_TIME = GM_getValue('PR1_FINISH', '8:30:01');
+    const PRESET1_INITIAL_TIME = GM_getValue('PR1_INIT', '8:44:50');
+    const PRESET1_FINISH_TIME = GM_getValue('PR1_FINISH', '8:45:05');
     const PRESET1_ORDER_NUMBER = GM_getValue('PR1_NUM', '15');
-    const PRESET1_TIME_INTERVAL = GM_getValue('PR1_INT', '500');
+    const PRESET1_TIME_INTERVAL = GM_getValue('PR1_INT', '300');
 
     const PRESET2_INITIAL_TIME = GM_getValue('PR2_INIT', '12:34:55');
     const PRESET2_FINISH_TIME = GM_getValue('PR2_FINISH', '12:35:01');
